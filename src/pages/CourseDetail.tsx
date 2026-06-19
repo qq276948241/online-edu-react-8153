@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import {
   Home,
@@ -31,6 +31,7 @@ import VideoPlayer from '@/components/course/VideoPlayer';
 import ChapterAccordion from '@/components/course/ChapterAccordion';
 import NotePanel from '@/components/course/NotePanel';
 import { useNotesStore } from '@/store/useNotesStore';
+import { useCoursePlayer } from '@/hooks/useCoursePlayer';
 import { cn } from '@/lib/utils';
 
 type SidebarTab = 'chapters' | 'notes';
@@ -39,6 +40,10 @@ export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
   const course = id ? getCourseById(id) : undefined;
   const [activeTab, setActiveTab] = useState<SidebarTab>('chapters');
+
+  const player = useCoursePlayer({
+    chapters: course?.chapters || [],
+  });
 
   if (!id || !course) {
     return <Navigate to="/" replace />;
@@ -179,7 +184,17 @@ export default function CourseDetail() {
       <section className="container">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <VideoPlayer coverImage={course.coverImage} title={course.title} />
+            <VideoPlayer
+              coverImage={course.coverImage}
+              title={course.title}
+              currentLesson={player.currentLesson}
+              isPlaying={player.isPlaying}
+              onTogglePlay={player.togglePlay}
+              onNext={player.nextLesson}
+              onPrev={player.prevLesson}
+              hasNext={player.currentLessonIndex < player.totalLessons - 1}
+              hasPrev={player.currentLessonIndex > 0}
+            />
 
             <div className="card p-6 md:p-8">
               <div className="flex items-center gap-2.5 mb-5">
@@ -310,7 +325,17 @@ export default function CourseDetail() {
               </div>
 
               <div className={activeTab === 'chapters' ? 'block' : 'hidden'}>
-                <ChapterAccordion chapters={course.chapters} />
+                <ChapterAccordion
+                  chapters={course.chapters}
+                  expandedChapterIds={player.expandedChapterIds}
+                  currentLessonId={player.currentLessonId}
+                  isPlaying={player.isPlaying}
+                  totalLessons={player.totalLessons}
+                  totalDurationText={player.totalDurationText}
+                  onToggleChapter={player.toggleChapter}
+                  onPlayLesson={player.playLesson}
+                  getChapterStats={player.getChapterStats}
+                />
               </div>
               <div className={activeTab === 'notes' ? 'block' : 'hidden'}>
                 <NotePanel courseId={course.id} chapters={course.chapters} />
