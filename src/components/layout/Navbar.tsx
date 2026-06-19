@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { NavLink, Link, useLocation } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { NavLink, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { GraduationCap, Menu, X, Search, User, ShoppingCart } from 'lucide-react';
 import { CATEGORIES } from '@/data/mockData';
 
@@ -7,6 +7,7 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -20,6 +21,17 @@ export default function Navbar() {
   }, [location.pathname]);
 
   const navCategories = CATEGORIES.filter((c) => c.id !== 'all').slice(0, 5);
+
+  const currentCategory = useMemo(
+    () => searchParams.get('category'),
+    [searchParams]
+  );
+
+  const isCategoryActive = (categoryId: string) => {
+    if (location.pathname !== '/courses') return false;
+    if (!currentCategory) return false;
+    return currentCategory === categoryId;
+  };
 
   return (
     <header
@@ -46,9 +58,9 @@ export default function Navbar() {
               <NavLink
                 key={cat.id}
                 to={`/courses?category=${cat.id}`}
-                className={({ isActive }) =>
-                  `nav-link px-3 text-sm ${isActive ? 'active' : ''}`
-                }
+                className={`nav-link px-3 text-sm ${
+                  isCategoryActive(cat.id) ? 'active' : ''
+                }`}
               >
                 {cat.name}
               </NavLink>
@@ -90,21 +102,22 @@ export default function Navbar() {
         {isMobileOpen && (
           <div className="lg:hidden pb-4 pt-2 border-t border-white/10 animate-fade-in">
             <div className="flex flex-col gap-1">
-              {CATEGORIES.filter((c) => c.id !== 'all').map((cat) => (
-                <NavLink
-                  key={cat.id}
-                  to={`/courses?category=${cat.id}`}
-                  className={({ isActive }) =>
-                    `px-4 py-3 rounded-xl text-sm transition-all ${
-                      isActive
+              {CATEGORIES.filter((c) => c.id !== 'all').map((cat) => {
+                const active = isCategoryActive(cat.id);
+                return (
+                  <NavLink
+                    key={cat.id}
+                    to={`/courses?category=${cat.id}`}
+                    className={`px-4 py-3 rounded-xl text-sm transition-all ${
+                      active
                         ? 'bg-gradient-brand text-white shadow-btn'
                         : 'text-white/80 hover:bg-white/10 hover:text-white'
-                    }`
-                  }
-                >
-                  {cat.name}
-                </NavLink>
-              ))}
+                    }`}
+                  >
+                    {cat.name}
+                  </NavLink>
+                );
+              })}
               <div className="h-px bg-white/10 my-2" />
               <div className="flex gap-2">
                 <button className="flex-1 btn-ghost text-sm justify-center">登录</button>
