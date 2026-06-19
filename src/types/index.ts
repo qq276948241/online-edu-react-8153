@@ -90,3 +90,25 @@ export interface CourseFilters {
   page: number;
   pageSize: number;
 }
+
+export interface Note {
+  id: string;
+  courseId: string;
+  chapterId: string;
+  lessonId?: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  isImportant?: boolean;
+}
+
+export interface NotesState {
+  notes: Note[];
+  addNote: (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateNote: (id: string, content: string) => void;
+  deleteNote: (id: string) => void;
+  toggleImportant: (id: string) => void;
+  getNotesByCourse: (courseId: string) => Note[];
+  getNotesByChapter: (courseId: string, chapterId: string) => Note[];
+  getNoteCountByChapter: (courseId: string, chapterId: string) => number;
+}

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import {
   Home,
@@ -14,6 +15,8 @@ import {
   Shield,
   RefreshCw,
   FileText,
+  List,
+  StickyNote,
 } from 'lucide-react';
 import {
   getCourseById,
@@ -26,10 +29,16 @@ import {
 import StarRating from '@/components/common/StarRating';
 import VideoPlayer from '@/components/course/VideoPlayer';
 import ChapterAccordion from '@/components/course/ChapterAccordion';
+import NotePanel from '@/components/course/NotePanel';
+import { useNotesStore } from '@/store/useNotesStore';
+import { cn } from '@/lib/utils';
+
+type SidebarTab = 'chapters' | 'notes';
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
   const course = id ? getCourseById(id) : undefined;
+  const [activeTab, setActiveTab] = useState<SidebarTab>('chapters');
 
   if (!id || !course) {
     return <Navigate to="/" replace />;
@@ -38,6 +47,7 @@ export default function CourseDetail() {
   const instructor = getInstructorById(course.instructorId);
   const reviews = getReviewsByCourse(course.id);
   const discount = Math.round((1 - course.price / course.originalPrice) * 100);
+  const totalNotes = useNotesStore((s) => s.getNotesByCourse(course.id).length);
 
   return (
     <div className="pt-20 pb-16 bg-surface-bg min-h-screen">
@@ -258,7 +268,53 @@ export default function CourseDetail() {
 
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
-              <ChapterAccordion chapters={course.chapters} />
+              <div className="card overflow-hidden">
+                <div className="relative flex border-b border-navy-700/5 bg-white">
+                  <div
+                    className="absolute bottom-0 left-0 h-0.5 bg-gradient-brand transition-all duration-300 ease-smooth"
+                    style={{
+                      width: '50%',
+                      transform: activeTab === 'chapters' ? 'translateX(0)' : 'translateX(100%)',
+                    }}
+                  />
+                  <button
+                    onClick={() => setActiveTab('chapters')}
+                    className={cn(
+                      'flex-1 flex items-center justify-center gap-1.5 py-3.5 text-sm font-medium transition-all relative z-10',
+                      activeTab === 'chapters'
+                        ? 'text-brand-600'
+                        : 'text-navy-700/60 hover:text-navy-900'
+                    )}
+                  >
+                    <List className="w-4 h-4" />
+                    课程目录
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('notes')}
+                    className={cn(
+                      'flex-1 flex items-center justify-center gap-1.5 py-3.5 text-sm font-medium transition-all relative z-10',
+                      activeTab === 'notes'
+                        ? 'text-brand-600'
+                        : 'text-navy-700/60 hover:text-navy-900'
+                    )}
+                  >
+                    <StickyNote className="w-4 h-4" />
+                    学习笔记
+                    {totalNotes > 0 && (
+                      <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-accent-gold/15 text-accent-gold text-xs font-bold flex items-center justify-center">
+                        {totalNotes}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className={activeTab === 'chapters' ? 'block' : 'hidden'}>
+                <ChapterAccordion chapters={course.chapters} />
+              </div>
+              <div className={activeTab === 'notes' ? 'block' : 'hidden'}>
+                <NotePanel courseId={course.id} chapters={course.chapters} />
+              </div>
             </div>
           </div>
         </div>
